@@ -1,0 +1,21 @@
+[package]
+name = "pyton"
+version = "0.1.0"
+authors = ["Ivan Kalinin <i.kalinin@dexpa.io>"]
+edition = "2018"
+
+[lib]
+name = "pyton"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.12", features = ["extension-module", "macros"] }
+tokio = { version = "0.2", features = ["macros", "sync"] }
+
+tonlib = { git = "https://github.com/broxus/tonlib-rs.git" }
+
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "link-arg=-undefined",
+    "-C", "link-arg=dynamic_lookup",
+]
