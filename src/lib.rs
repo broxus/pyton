@@ -15,15 +15,15 @@ struct PyTonClient {
 #[pymethods]
 impl PyTonClient {
     #[new]
-    fn new(server_address: String, server_key: String) -> PyResult<Self> {
-        let server_address = server_address.parse().map_err(PyValueError::new_err)?;
+    fn new(address: String, key: String) -> PyResult<Self> {
+        let server_address = address.parse().map_err(PyValueError::new_err)?;
         let last_block_threshold = Duration::from_secs(1);
 
         let mut rt = tokio::runtime::Runtime::new().unwrap();
         let client = rt
             .block_on(TonlibClient::new(&Config {
                 server_address,
-                server_key,
+                server_key: key,
                 last_block_threshold,
             }))
             .map_err(|e| PyValueError::new_err(e.to_string()))?;
