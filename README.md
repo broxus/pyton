@@ -1,6 +1,14 @@
 ## PyTON
 Python bindings to tonlib
 
+### Build
+
+```bash
+cargo build --release
+# copy without `lib` prefix
+cp /target/release/libpyton.so /path/to/project/python.so
+```
+
 ### Example
 
 ```python
