@@ -9,10 +9,9 @@ name = "pyton"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.12", features = ["extension-module", "macros"] }
-tokio = { version = "0.2", features = ["macros", "sync"] }
-
-tonlib = { git = "https://github.com/broxus/tonlib-rs.git" }
+pyo3 = { version = "0.13", features = ["extension-module", "macros"] }
+ton_types = { git = "https://github.com/tonlabs/ton-labs-types.git" }
+ton_block = { git = "https://github.com/tonlabs/ton-labs-block.git" }
 
 [target.x86_64-apple-darwin]
 rustflags = [

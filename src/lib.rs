@@ -1,57 +1,44 @@
-use std::sync::Arc;
-
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
-use pyo3::types::PyBytes;
-use std::time::Duration;
-use tonlib::{Config, TonlibClient};
+use ton_block::Deserializable;
 
 #[pyclass]
-struct PyTonClient {
-    rt: Option<tokio::runtime::Runtime>,
-    client: Arc<TonlibClient>,
+struct PyContractInfo {
+    #[pyo3(get)]
+    code_hash: String,
+    #[pyo3(get)]
+    data_hash: String,
 }
 
-#[pymethods]
-impl PyTonClient {
-    #[new]
-    fn new(address: String, key: String) -> PyResult<Self> {
-        let server_address = address.parse().map_err(PyValueError::new_err)?;
-        let last_block_threshold = Duration::from_secs(1);
+#[pyfunction]
+fn get_contract_info(tvc: &[u8]) -> PyResult<PyContractInfo> {
+    let data = ton_types::deserialize_tree_of_cells(&mut std::io::Cursor::new(tvc))
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
-        let mut rt = tokio::runtime::Runtime::new().unwrap();
-        let client = rt
-            .block_on(TonlibClient::new(&Config {
-                server_address,
-                server_key: key,
-                last_block_threshold,
-            }))
-            .map_err(|e| PyValueError::new_err(e.to_string()))?;
+    let account = ton_block::StateInit::construct_from_cell(data)
+        .map_err(|e| PyValueError::new_err(e.to_string()))?;
 
-        Ok(Self {
-            rt: Some(rt),
-            client: Arc::new(client),
-        })
-    }
+    let code_hash = account
+        .code
+        .map(|code| code.repr_hash())
+        .unwrap_or_default()
+        .to_hex_string();
+    let data_hash = account
+        .data
+        .map(|code| code.repr_hash())
+        .unwrap_or_default()
+        .to_hex_string();
 
-    fn send_message(mut self_: PyRefMut<Self>, bytes: &PyBytes) -> PyResult<()> {
-        let mut rt = self_.rt.take();
-
-        let result = match &mut rt {
-            Some(rt) => rt
-                .block_on(async { self_.client.send_message(bytes.as_bytes().to_vec()).await })
-                .map_err(|e| PyValueError::new_err(e.to_string())),
-            None => unreachable!(),
-        };
-
-        self_.rt = rt;
-
-        result
-    }
+    Ok(PyContractInfo {
+        code_hash,
+        data_hash,
+    })
 }
 
 #[pymodule]
-fn libpyton(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyTonClient>()?;
+fn pyton(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_class::<PyContractInfo>()?;
+    m.add_function(pyo3::wrap_pyfunction!(get_contract_info, m)?)?;
+
     Ok(())
 }

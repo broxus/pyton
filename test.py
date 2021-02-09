@@ -1,9 +1,11 @@
 import sys
 sys.path.append("target/debug/")
 
-from libpyton import PyTonClient
+from pyton import get_contract_info
 
-client = PyTonClient(address="54.158.97.195:3032", key="uNRRL+6enQjuiZ/s6Z+vO7yxUUR7uxdfzIy+RxkECrc=")
+with open("Test.tvc", 'rb') as file:
+    tvc = file.read()
 
-test: bytes = b"asd"
-client.send_message(test)
+    info = get_contract_info(tvc)
+    print(f"Code hash: {info.code_hash}")
+    print(f"Data hash: {info.data_hash}")
